@@ -14,13 +14,14 @@ module.exports.getUsers = (req, res) => {
     .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.find({ _id: req.params.id })
     .then((user) => {
       if (user) {
         res.send({ data: user })
       } else {
         res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' })
+        next()
       }
     })
     .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
@@ -34,8 +35,9 @@ module.exports.createUser = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(ERROR_INPUT).send({ message: 'Данные введены некорректно' })
-      };
-      res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
+      } else {
+        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
+      }
     });
 };
 
@@ -62,5 +64,5 @@ module.exports.updateAvatar = (req, res) => {
         res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' })
       }
     })
-    .catch (err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
 }
