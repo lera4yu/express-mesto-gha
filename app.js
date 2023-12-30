@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const { ERROR_FORBIDDEN } = require('./utils/constants');
 
 const { PORT = 3000 } = process.env;
 
@@ -24,9 +25,10 @@ app.use('/users', require('./routes/users'));
 
 app.use('/cards', require('./routes/cards'));
 
+app.use((req, res, next) => next(res.status(ERROR_FORBIDDEN).send({ message: 'Страницы по данному URL не существует' })));
+
 app.listen(PORT, () => {
-    // Если всё работает, консоль покажет, какой порт приложение слушает
-    console.log(`App listening on port ${PORT}`)
+  console.log(`App listening on port ${PORT}`)
 });
 
 

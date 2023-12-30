@@ -1,8 +1,8 @@
 const Card = require('../models/card');
 
-const ERROR_INPUT = 400;
-const ERROR_FORBIDDEN = 404;
-const ERROR_SERVER = 500;
+const { ERROR_INPUT } = require('../utils/constants');
+const { ERROR_FORBIDDEN } = require('../utils/constants');
+const { ERROR_SERVER } = require('../utils/constants');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -34,7 +34,13 @@ module.exports.deleteCard = (req, res) => {
         res.status(ERROR_FORBIDDEN).send({ message: 'Карточка с таким id не найдена' })
       }
     })
-    .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(ERROR_INPUT).send({ message: 'Формат ID карточки не корректен' })
+      } else {
+        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
+      }
+    });
 }
 
 module.exports.likeCard = (req, res) => {
@@ -51,8 +57,14 @@ module.exports.likeCard = (req, res) => {
         res.status(ERROR_FORBIDDEN).send({ message: 'Карточка с таким id не найдена' })
       }
     })
-    .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
-}
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(ERROR_INPUT).send({ message: 'Формат ID карточки не корректен' })
+      } else {
+        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
+      }
+    })
+};
 
 module.exports.dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(
@@ -67,5 +79,11 @@ module.exports.dislikeCard = (req, res) => {
         res.status(ERROR_FORBIDDEN).send({ message: 'Карточка с таким id не найдена' })
       }
     })
-    .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
-}
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(ERROR_INPUT).send({ message: 'Формат ID карточки не корректен' })
+      } else {
+        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
+      }
+    })
+};

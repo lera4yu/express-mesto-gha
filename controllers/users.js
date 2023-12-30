@@ -4,9 +4,9 @@
 
 const User = require('../models/user');
 
-const ERROR_INPUT = 400;
-const ERROR_FORBIDDEN = 404;
-const ERROR_SERVER = 500;
+const { ERROR_INPUT } = require('../utils/constants');
+const { ERROR_FORBIDDEN } = require('../utils/constants');
+const { ERROR_SERVER } = require('../utils/constants');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -14,17 +14,23 @@ module.exports.getUsers = (req, res) => {
     .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
 };
 
-module.exports.getUser = (req, res, next) => {
+module.exports.getUser = (req, res) => {
   User.find({ _id: req.params.id })
     .then((user) => {
-      if (user) {
-        res.send({ data: user })
+      if (user[0]) {
+        res.send({ data: user[0] })
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' })
-        next()
+        res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' });
       }
     })
-    .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch(err => {
+      if (err.name === 'CastError') {
+        res.status(ERROR_INPUT).send({ message: 'Формат ID пользователя не корректен' })
+      }
+      else {
+        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }); console.log(err);
+      }
+    });
 };
 
 module.exports.createUser = (req, res) => {
@@ -35,7 +41,8 @@ module.exports.createUser = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(ERROR_INPUT).send({ message: 'Данные введены некорректно' })
-      } else {
+      }
+      else {
         res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
       }
     });
@@ -43,15 +50,24 @@ module.exports.createUser = (req, res) => {
 
 module.exports.updateUser = (req, res) => {
   const { name, about } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
+  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
+      console.log(user);
       if (user) {
         res.send({ data: user })
       } else {
         res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' })
       }
     })
-    .catch(err => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(ERROR_INPUT).send({ message: 'Данные введены некорректно' })
+      } else if (err.name === 'CastError') {
+        res.status(ERROR_INPUT).send({ message: 'Формат ID пользователя не корректен' })
+      } else {
+        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' })
+      }
+    });
 }
 
 module.exports.updateAvatar = (req, res) => {
