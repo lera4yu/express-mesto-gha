@@ -5,5 +5,5 @@ const ERROR_SERVER = 500;
 module.exports = {
   ERROR_INPUT,
   ERROR_FORBIDDEN,
-  ERROR_SERVER
+  ERROR_SERVER,
 };

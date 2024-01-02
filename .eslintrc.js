@@ -20,7 +20,8 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
+  plugins: ['require'],
   rules: {
-    'no-underscore-dangle': ['error', { allow: '_id' }],
+    'no-underscore-dangle': ['error', { allow: ['_id'] }],
   },
 };
