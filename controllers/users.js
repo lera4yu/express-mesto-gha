@@ -18,7 +18,7 @@ module.exports.getUser = (req, res, next) => {
       if (user[0]) {
         res.send({ data: user[0] });
       } else {
-        throw new ForbiddenError('Пользователь с таким id не найден');
+        next(new ForbiddenError('Пользователь с таким id не найден'));
       }
     })
     .catch((err) => {
@@ -74,7 +74,7 @@ module.exports.updateUser = (req, res, next) => {
       if (user) {
         res.send({ data: user });
       } else {
-        throw new ForbiddenError('Пользователь с таким id не найден');
+        next(new ForbiddenError('Пользователь с таким id не найден'));
       }
     })
     .catch((err) => {
@@ -95,7 +95,7 @@ module.exports.updateAvatar = (req, res, next) => {
       if (user) {
         res.send({ data: user });
       } else {
-        throw new ForbiddenError('Пользователь с таким id не найден');
+        next(new ForbiddenError('Пользователь с таким id не найден'));
       }
     })
     .catch(next);
@@ -123,7 +123,7 @@ module.exports.getCurrentUser = (req, res, next) => {
       if (!user) {
         throw new ForbiddenError('Пользователь не найден');
       }
-      res.send({ data: user });
+      res.send({ data: user[0] });
     })
     .catch(next);
 };

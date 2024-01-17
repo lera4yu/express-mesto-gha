@@ -2,6 +2,7 @@ const Card = require('../models/card');
 
 const ForbiddenError = require('../errors/ForbiddenError');
 const InputError = require('../errors/InputError');
+const AuthForbiddenError = require('../errors/AuthForbiddenError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -28,12 +29,12 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        throw new ForbiddenError('Карточка с таким id не найдена');
+        next(new ForbiddenError('Карточка с таким id не найдена'));
       } else if (req.user._id === card.owner.toString()) {
         Card.findByIdAndDelete(req.params.cardId)
           .then((cardInfo) => res.send({ data: cardInfo }));
       } else {
-        throw new ForbiddenError('Не допустимо удаление карточки другого пользователя');
+        throw new AuthForbiddenError('Не допустимо удаление карточки другого пользователя');
       }
     })
     .catch((err) => {
@@ -55,7 +56,7 @@ module.exports.likeCard = (req, res, next) => {
       if (card) {
         res.send({ data: card });
       } else {
-        throw new ForbiddenError('Карточка с таким id не найдена');
+        next(new ForbiddenError('Карточка с таким id не найдена'));
       }
     })
     .catch((err) => {
@@ -77,7 +78,7 @@ module.exports.dislikeCard = (req, res, next) => {
       if (card) {
         res.send({ data: card });
       } else {
-        throw new ForbiddenError('Карточка с таким id не найдена');
+        next(new ForbiddenError('Карточка с таким id не найдена'));
       }
     })
     .catch((err) => {
