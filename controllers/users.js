@@ -1,75 +1,120 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const ForbiddenError = require('../errors/ForbiddenError');
+const InputError = require('../errors/InputError');
+const AuthorizationError = require('../errors/AuthorizationError');
+const DuplicateError = require('../errors/DuplicateError');
 
-const { ERROR_INPUT, ERROR_FORBIDDEN, ERROR_SERVER} = require('../utils/constants');
-
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.find({ _id: req.params.id })
     .then((user) => {
       if (user[0]) {
         res.send({ data: user[0] });
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' });
+        throw new ForbiddenError('Пользователь с таким id не найден');
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(ERROR_INPUT).send({ message: 'Формат ID пользователя не корректен' });
+        next(new InputError('Формат ID пользователя не корректен'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-
-  User.create({ name, about, avatar })
+module.exports.createUser = (req, res, next) => {
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => res.status(201).send({ data: user }))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(ERROR_INPUT).send({ message: 'Данные введены некорректно' });
+      if (err.code === 11000) {
+        next(new DuplicateError('Пользователь с таким адресом электронной почты уже существует'));
+      } else if (err.name === 'ValidationError') {
+        next(new InputError('Данные введены некорректно'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (user) {
         res.send({ data: user });
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' });
+        throw new ForbiddenError('Пользователь с таким id не найден');
       }
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(ERROR_INPUT).send({ message: 'Данные введены некорректно' });
+        next(new InputError('Данные введены некорректно'));
       } else if (err.name === 'CastError') {
-        res.status(ERROR_INPUT).send({ message: 'Формат ID пользователя не корректен' });
+        next(new InputError('Формат ID пользователя не корректен'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const avatar = req.body;
   User.findByIdAndUpdate(req.user._id, avatar, { new: true })
     .then((user) => {
       if (user) {
         res.send({ data: user });
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Пользователь с таким id не найден' });
+        throw new ForbiddenError('Пользователь с таким id не найден');
       }
     })
-    .catch(() => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch(next);
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  User.findUserByCredentials(email, password)
+    .then((user) => {
+      if (user) {
+        const token = jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' });
+        res.send({ token });
+      } else {
+        throw new AuthorizationError('Неправильные почта или пароль');
+      }
+    })
+    .catch(next);
+};
+
+module.exports.getCurrentUser = (req, res, next) => {
+  const { _id } = req.user;
+  User.find({ _id })
+    .then((user) => {
+      if (!user) {
+        throw new ForbiddenError('Пользователь не найден');
+      }
+      res.send({ data: user });
+    })
+    .catch(next);
 };

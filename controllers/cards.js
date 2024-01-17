@@ -1,14 +1,15 @@
 const Card = require('../models/card');
 
-const { ERROR_INPUT, ERROR_FORBIDDEN, ERROR_SERVER} = require('../utils/constants');
+const ForbiddenError = require('../errors/ForbiddenError');
+const InputError = require('../errors/InputError');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send({ data: cards }))
-    .catch(() => res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
 
@@ -16,32 +17,35 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.status(201).send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(ERROR_INPUT).send({ message: 'Данные введены некорректно' });
+        next(new InputError('Данные введены некорректно'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
 
-module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndDelete(req.params.cardId)
+module.exports.deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
     .then((card) => {
-      if (card) {
-        res.send({ data: card });
+      if (!card) {
+        throw new ForbiddenError('Карточка с таким id не найдена');
+      } else if (req.user._id === card.owner.toString()) {
+        Card.findByIdAndDelete(req.params.cardId)
+          .then((cardInfo) => res.send({ data: cardInfo }));
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Карточка с таким id не найдена' });
+        throw new ForbiddenError('Не допустимо удаление карточки другого пользователя');
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(ERROR_INPUT).send({ message: 'Формат ID карточки не корректен' });
+        next(new InputError('Формат ID карточки не корректен'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -51,19 +55,19 @@ module.exports.likeCard = (req, res) => {
       if (card) {
         res.send({ data: card });
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Карточка с таким id не найдена' });
+        throw new ForbiddenError('Карточка с таким id не найдена');
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(ERROR_INPUT).send({ message: 'Формат ID карточки не корректен' });
+        next(new InputError('Формат ID карточки не корректен'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
@@ -73,14 +77,14 @@ module.exports.dislikeCard = (req, res) => {
       if (card) {
         res.send({ data: card });
       } else {
-        res.status(ERROR_FORBIDDEN).send({ message: 'Карточка с таким id не найдена' });
+        throw new ForbiddenError('Карточка с таким id не найдена');
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(ERROR_INPUT).send({ message: 'Формат ID карточки не корректен' });
+        next(new InputError('Формат ID карточки не корректен'));
       } else {
-        res.status(ERROR_SERVER).send({ message: 'На сервере произошла ошибка' });
+        next();
       }
     });
 };
