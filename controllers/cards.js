@@ -34,7 +34,7 @@ module.exports.deleteCard = (req, res, next) => {
         Card.findByIdAndDelete(req.params.cardId)
           .then((cardInfo) => res.send({ data: cardInfo }));
       } else {
-        throw new AuthForbiddenError('Не допустимо удаление карточки другого пользователя');
+        next(new AuthForbiddenError('Не допустимо удаление карточки другого пользователя'));
       }
     })
     .catch((err) => {
