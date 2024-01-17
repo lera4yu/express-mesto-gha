@@ -46,7 +46,16 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.status(201).send({ data: user }))
+    .then((user) => {
+      const { _id } = user;
+      res.status(201).send({
+        email,
+        name,
+        about,
+        avatar,
+        _id,
+      });
+    })
     .catch((err) => {
       if (err.code === 11000) {
         next(new DuplicateError('Пользователь с таким адресом электронной почты уже существует'));
