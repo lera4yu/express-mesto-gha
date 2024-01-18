@@ -1,8 +1,8 @@
 const Card = require('../models/card');
 
-const ForbiddenError = require('../errors/ForbiddenError');
+const NotFoundError = require('../errors/NotFoundError');
 const InputError = require('../errors/InputError');
-const AuthForbiddenError = require('../errors/AuthForbiddenError');
+const AuthNotFoundError = require('../errors/AuthNotFoundError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -20,7 +20,7 @@ module.exports.createCard = (req, res, next) => {
       if (err.name === 'ValidationError') {
         next(new InputError('Данные введены некорректно'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -29,19 +29,19 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        next(new ForbiddenError('Карточка с таким id не найдена'));
+        next(new NotFoundError('Карточка с таким id не найдена'));
       } else if (req.user._id === card.owner.toString()) {
-        Card.findByIdAndDelete(req.params.cardId)
-          .then((cardInfo) => res.send({ data: cardInfo }));
+        Card.deleteOne(card)
+          .then(() => res.send({ data: card }));
       } else {
-        next(new AuthForbiddenError('Не допустимо удаление карточки другого пользователя'));
+        next(new AuthNotFoundError('Не допустимо удаление карточки другого пользователя'));
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new InputError('Формат ID карточки не корректен'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -56,14 +56,14 @@ module.exports.likeCard = (req, res, next) => {
       if (card) {
         res.send({ data: card });
       } else {
-        next(new ForbiddenError('Карточка с таким id не найдена'));
+        next(new NotFoundError('Карточка с таким id не найдена'));
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new InputError('Формат ID карточки не корректен'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -78,14 +78,14 @@ module.exports.dislikeCard = (req, res, next) => {
       if (card) {
         res.send({ data: card });
       } else {
-        next(new ForbiddenError('Карточка с таким id не найдена'));
+        next(new NotFoundError('Карточка с таким id не найдена'));
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new InputError('Формат ID карточки не корректен'));
       } else {
-        next();
+        next(err);
       }
     });
 };

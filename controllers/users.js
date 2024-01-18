@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const ForbiddenError = require('../errors/ForbiddenError');
+const NotFoundError = require('../errors/NotFoundError');
 const InputError = require('../errors/InputError');
 const AuthorizationError = require('../errors/AuthorizationError');
 const DuplicateError = require('../errors/DuplicateError');
@@ -18,14 +18,14 @@ module.exports.getUser = (req, res, next) => {
       if (user[0]) {
         res.send({ data: user[0] });
       } else {
-        next(new ForbiddenError('Пользователь с таким id не найден'));
+        next(new NotFoundError('Пользователь с таким id не найден'));
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new InputError('Формат ID пользователя не корректен'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -62,7 +62,7 @@ module.exports.createUser = (req, res, next) => {
       } else if (err.name === 'ValidationError') {
         next(new InputError('Данные введены некорректно'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -74,7 +74,7 @@ module.exports.updateUser = (req, res, next) => {
       if (user) {
         res.send({ data: user });
       } else {
-        next(new ForbiddenError('Пользователь с таким id не найден'));
+        next(new NotFoundError('Пользователь с таким id не найден'));
       }
     })
     .catch((err) => {
@@ -83,7 +83,7 @@ module.exports.updateUser = (req, res, next) => {
       } else if (err.name === 'CastError') {
         next(new InputError('Формат ID пользователя не корректен'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -95,7 +95,7 @@ module.exports.updateAvatar = (req, res, next) => {
       if (user) {
         res.send({ data: user });
       } else {
-        next(new ForbiddenError('Пользователь с таким id не найден'));
+        next(new NotFoundError('Пользователь с таким id не найден'));
       }
     })
     .catch(next);
@@ -121,7 +121,7 @@ module.exports.getCurrentUser = (req, res, next) => {
   User.find({ _id })
     .then((user) => {
       if (!user) {
-        throw new ForbiddenError('Пользователь не найден');
+        throw new NotFoundError('Пользователь не найден');
       }
       res.send({ data: user[0] });
     })

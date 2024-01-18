@@ -1,8 +1,8 @@
-class AuthForbiddenError extends Error {
+class AuthNotFoundError extends Error {
   constructor(message) {
     super(message);
     this.statusCode = 403;
   }
 }
 
-module.exports = AuthForbiddenError;
+module.exports = AuthNotFoundError;
