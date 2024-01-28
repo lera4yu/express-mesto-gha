@@ -1,0 +1,21 @@
+.authentication {
+  margin: 0 auto;
+  padding: 0;
+  max-width: 880px;
+}
+
+@media screen and (max-width: 960px) {
+
+  .authentication {
+
+  }
+
+}
+
+@media screen and (max-width: 638px) {
+
+  .authentication {
+
+  }
+
+}

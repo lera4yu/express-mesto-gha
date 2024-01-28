@@ -9,6 +9,7 @@ const auth = require('./middlewares/auth');
 const handleError = require('./middlewares/handleError');
 const NotFoundError = require('./errors/NotFoundError');
 const { validateSignUp, validateSignIn } = require('./middlewares/validation');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
 
@@ -32,6 +33,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(limiter);
 
+app.use(requestLogger);
+
 app.post('/signup', validateSignUp, createUser);
 
 app.post('/signin', validateSignIn, login);
@@ -44,7 +47,10 @@ app.use('/cards', require('./routes/cards'));
 
 app.use((req, res, next) => next(new NotFoundError('Страницы по данному URL не существует')));
 
+app.use(errorLogger);
+
 app.use(errors());
+
 app.use(handleError);
 
 app.listen(PORT, () => {
